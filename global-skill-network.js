@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const os = require('os');
+const https = require('https');
 
 class GlobalSkillNetwork {
     constructor() {
@@ -12,7 +13,9 @@ class GlobalSkillNetwork {
         this.globalRepo = 'https://github.com/OpenClaw-Global/global-skills.git';
         this.globalSkillsDir = path.join(this.skillsDir, 'global');
         this.localSkillsDir = path.join(this.skillsDir, 'local');
+        this.hubSkillsDir = path.join(this.skillsDir, 'hub');
         this.backupDir = path.join(this.skillsDir, 'backups');
+        this.skillsIndex = null;
         this.ensureDirectories();
     }
 
@@ -54,7 +57,7 @@ class GlobalSkillNetwork {
     }
 
     ensureDirectories() {
-        [this.skillsDir, this.globalSkillsDir, this.localSkillsDir, this.backupDir].forEach(dir => {
+        [this.skillsDir, this.globalSkillsDir, this.localSkillsDir, this.hubSkillsDir, this.backupDir].forEach(dir => {
             if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
             }
@@ -448,6 +451,252 @@ class GlobalSkillNetwork {
         }, this.config.syncInterval);
     }
 
+    loadSkillsIndex() {
+        try {
+            const indexPath = path.join(process.cwd(), this.config.skillsHub?.localIndexPath || 'skills-index.json');
+            if (fs.existsSync(indexPath)) {
+                this.skillsIndex = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
+                this.log(`Loaded skills index with ${this.skillsIndex.skills.length} skills`);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            this.log(`Failed to load skills index: ${error.message}`, 'error');
+            return false;
+        }
+    }
+
+    async downloadSkillsIndex() {
+        if (!this.config.skillsHub?.enabled || !this.config.skillsHub?.remoteIndexUrl) {
+            this.log('Skills hub is not enabled or remote URL not configured', 'warn');
+            return false;
+        }
+
+        return new Promise((resolve) => {
+            this.log('Downloading skills index from GitHub...');
+            https.get(this.config.skillsHub.remoteIndexUrl, (res) => {
+                let data = '';
+                res.on('data', (chunk) => data += chunk);
+                res.on('end', () => {
+                    try {
+                        const indexPath = path.join(process.cwd(), this.config.skillsHub.localIndexPath);
+                        fs.writeFileSync(indexPath, data);
+                        this.skillsIndex = JSON.parse(data);
+                        this.log(`Skills index downloaded successfully (${this.skillsIndex.skills.length} skills)`);
+                        resolve(true);
+                    } catch (error) {
+                        this.log(`Failed to save skills index: ${error.message}`, 'error');
+                        resolve(false);
+                    }
+                });
+            }).on('error', (error) => {
+                this.log(`Failed to download skills index: ${error.message}`, 'error');
+                resolve(false);
+            });
+        });
+    }
+
+    searchSkills(query) {
+        if (!this.skillsIndex) {
+            this.log('Skills index not loaded', 'error');
+            return [];
+        }
+
+        const lowerQuery = query.toLowerCase();
+        return this.skillsIndex.skills.filter(skill => 
+            skill.name.toLowerCase().includes(lowerQuery) ||
+            skill.description.toLowerCase().includes(lowerQuery) ||
+            skill.tags.some(tag => tag.toLowerCase().includes(lowerQuery)) ||
+            skill.category.toLowerCase().includes(lowerQuery)
+        );
+    }
+
+    getSkillById(skillId) {
+        if (!this.skillsIndex) {
+            this.log('Skills index not loaded', 'error');
+            return null;
+        }
+
+        return this.skillsIndex.skills.find(skill => skill.id === skillId);
+    }
+
+    listSkillsByCategory(category) {
+        if (!this.skillsIndex) {
+            this.log('Skills index not loaded', 'error');
+            return [];
+        }
+
+        return this.skillsIndex.skills.filter(skill => skill.category === category);
+    }
+
+    async downloadSkill(skillId) {
+        const skill = this.getSkillById(skillId);
+        if (!skill) {
+            this.log(`Skill not found: ${skillId}`, 'error');
+            return false;
+        }
+
+        if (!skill.safe) {
+            this.log(`Skill ${skillId} is marked as unsafe`, 'warn');
+            return false;
+        }
+
+        this.log(`Downloading skill: ${skill.name} (${skillId})`);
+
+        const downloadDir = this.config.skillsHub?.downloadDirectory || this.hubSkillsDir;
+        const skillPath = path.join(downloadDir, skill.file);
+
+        try {
+            if (!fs.existsSync(path.dirname(skillPath))) {
+                fs.mkdirSync(path.dirname(skillPath), { recursive: true });
+            }
+
+            const githubRawUrl = `https://raw.githubusercontent.com/8zhangshulun/open-claw-gsn-skill-sharing-plugin/main/${skill.file}`;
+            
+            return new Promise((resolve) => {
+                https.get(githubRawUrl, (res) => {
+                    let data = '';
+                    res.on('data', (chunk) => data += chunk);
+                    res.on('end', () => {
+                        try {
+                            fs.writeFileSync(skillPath, data);
+                            this.log(`Skill downloaded successfully: ${skillPath}`);
+
+                            if (this.config.skillsHub?.verifyDownloadedSkills) {
+                                const scanResult = this.scanDangerousCode(skillPath);
+                                if (scanResult.dangerous) {
+                                    this.log(`⚠️  Dangerous code found in downloaded skill`, 'warn');
+                                    fs.unlinkSync(skillPath);
+                                    resolve(false);
+                                    return;
+                                }
+                            }
+
+                            resolve(true);
+                        } catch (error) {
+                            this.log(`Failed to save skill: ${error.message}`, 'error');
+                            resolve(false);
+                        }
+                    });
+                }).on('error', (error) => {
+                    this.log(`Failed to download skill: ${error.message}`, 'error');
+                    resolve(false);
+                });
+            });
+        } catch (error) {
+            this.log(`Failed to download skill: ${error.message}`, 'error');
+            return false;
+        }
+    }
+
+    async callSkill(skillId, params = {}) {
+        const skill = this.getSkillById(skillId);
+        if (!skill) {
+            this.log(`Skill not found: ${skillId}`, 'error');
+            return { success: false, error: 'Skill not found' };
+        }
+
+        if (!skill.safe) {
+            this.log(`Skill ${skillId} is marked as unsafe`, 'warn');
+            return { success: false, error: 'Skill is unsafe' };
+        }
+
+        const downloadDir = this.config.skillsHub?.downloadDirectory || this.hubSkillsDir;
+        const skillPath = path.join(downloadDir, skill.file);
+
+        if (!fs.existsSync(skillPath)) {
+            this.log(`Skill file not found locally, downloading...`);
+            const downloaded = await this.downloadSkill(skillId);
+            if (!downloaded) {
+                return { success: false, error: 'Failed to download skill' };
+            }
+        }
+
+        try {
+            if (this.config.sandboxEnabled) {
+                return this.executeSkillInSandbox(skillPath, params);
+            } else {
+                const skillModule = require(skillPath);
+                if (typeof skillModule === 'function') {
+                    const result = await skillModule(params);
+                    return { success: true, data: result };
+                } else if (skillModule.execute && typeof skillModule.execute === 'function') {
+                    const result = await skillModule.execute(params);
+                    return { success: true, data: result };
+                } else {
+                    return { success: false, error: 'Invalid skill format' };
+                }
+            }
+        } catch (error) {
+            this.log(`Failed to execute skill: ${error.message}`, 'error');
+            return { success: false, error: error.message };
+        }
+    }
+
+    executeSkillInSandbox(skillPath, params) {
+        this.log(`Executing skill in sandbox: ${skillPath}`);
+        const vm = require('vm');
+        const code = fs.readFileSync(skillPath, 'utf8');
+
+        try {
+            const sandbox = {
+                console: {
+                    log: (...args) => this.log(`[Skill] ${args.join(' ')}`),
+                    error: (...args) => this.log(`[Skill Error] ${args.join(' ')}`, 'error'),
+                    warn: (...args) => this.log(`[Skill Warn] ${args.join(' ')}`, 'warn')
+                },
+                require: (moduleName) => {
+                    const allowedModules = ['path', 'crypto', 'util', 'url', 'querystring'];
+                    if (allowedModules.includes(moduleName)) {
+                        return require(moduleName);
+                    }
+                    throw new Error(`Module ${moduleName} is not allowed in sandbox`);
+                },
+                __dirname: path.dirname(skillPath),
+                __filename: skillPath,
+                params: params,
+                module: { exports: {} },
+                exports: {}
+            };
+
+            const context = vm.createContext(sandbox);
+            vm.runInContext(code, context, { timeout: 5000 });
+
+            const result = sandbox.module.exports;
+            if (typeof result === 'function') {
+                const executionResult = result(params);
+                return { success: true, data: executionResult };
+            } else if (result.execute && typeof result.execute === 'function') {
+                const executionResult = result.execute(params);
+                return { success: true, data: executionResult };
+            } else {
+                return { success: true, data: result };
+            }
+        } catch (error) {
+            this.log(`Sandbox execution failed: ${error.message}`, 'error');
+            return { success: false, error: error.message };
+        }
+    }
+
+    async syncSkillsHub() {
+        this.log('='.repeat(50));
+        this.log('OpenClaw Skills Hub - Sync Mode');
+        this.log('='.repeat(50));
+
+        const downloaded = await this.downloadSkillsIndex();
+        if (!downloaded) {
+            this.log('Failed to sync skills hub', 'error');
+            return false;
+        }
+
+        this.log(`Skills hub synced successfully`);
+        this.log(`Total skills available: ${this.skillsIndex.skills.length}`);
+        this.log(`Categories: ${Object.keys(this.skillsIndex.categories).length}`);
+        this.log(`Last updated: ${this.skillsIndex.lastUpdated}`);
+
+        return true;
+    }
+
     async run() {
         const args = process.argv.slice(2);
         const command = args[0];
@@ -471,6 +720,43 @@ class GlobalSkillNetwork {
             case '--config':
                 this.showConfig();
                 break;
+            case '--sync-hub':
+                await this.syncSkillsHub();
+                break;
+            case '--search':
+                if (args[1]) {
+                    await this.loadSkillsIndex();
+                    const results = this.searchSkills(args[1]);
+                    this.log(`\nFound ${results.length} skill(s) matching "${args[1]}":`);
+                    results.forEach(skill => {
+                        this.log(`  - ${skill.name} (${skill.id})`);
+                        this.log(`    ${skill.description}`);
+                        this.log(`    Category: ${skill.category}, Tags: ${skill.tags.join(', ')}`);
+                    });
+                } else {
+                    this.log('Please provide a search query', 'error');
+                }
+                break;
+            case '--list':
+                await this.loadSkillsIndex();
+                if (this.skillsIndex) {
+                    this.log(`\nTotal skills available: ${this.skillsIndex.skills.length}`);
+                    this.log('\nCategories:');
+                    Object.entries(this.skillsIndex.categories).forEach(([key, category]) => {
+                        this.log(`  ${category.name} (${category.count} skills)`);
+                    });
+                }
+                break;
+            case '--call':
+                if (args[1]) {
+                    await this.loadSkillsIndex();
+                    const params = args[2] ? JSON.parse(args[2]) : {};
+                    const result = await this.callSkill(args[1], params);
+                    console.log(JSON.stringify(result, null, 2));
+                } else {
+                    this.log('Please provide a skill ID to call', 'error');
+                }
+                break;
             default:
                 this.log('\nUsage: node global-skill-network.js [command]');
                 this.log('\nCommands:');
@@ -479,6 +765,14 @@ class GlobalSkillNetwork {
                 this.log('  --rollback  回退到之前的版本');
                 this.log('  --safe      安全启动模式');
                 this.log('  --config    显示当前配置');
+                this.log('  --sync-hub  同步技能仓库索引');
+                this.log('  --search    搜索技能（需要提供查询词）');
+                this.log('  --list      列出所有可用技能');
+                this.log('  --call      调用指定技能（需要提供技能ID和参数）');
+                this.log('\nExamples:');
+                this.log('  node global-skill-network.js --search calculator');
+                this.log('  node global-skill-network.js --list');
+                this.log('  node global-skill-network.js --call calculator \'{"operation":"add","a":10,"b":20}\'');
                 this.log('\nSecurity Features:');
                 this.log('  ✓ 默认只拉取，不上传');
                 this.log('  ✓ 本地技能永远私有');
@@ -487,6 +781,7 @@ class GlobalSkillNetwork {
                 this.log('  ✓ 不修改核心代码');
                 this.log('  ✓ 沙箱执行环境');
                 this.log('  ✓ 危险代码扫描');
+                this.log('  ✓ GitHub技能仓库支持');
         }
     }
 }

@@ -20,5 +20,26 @@
   ],
   "allowedDomains": [],
   "maxFileSize": 1048576,
-  "enableLogging": true
+  "enableLogging": true,
+  "github": {
+    "enabled": true,
+    "repository": "https://github.com/8zhangshulun/open-claw-gsn-skill-sharing-plugin",
+    "branch": "main",
+    "skillsIndexPath": "skills-index.json",
+    "skillsDirectory": "skills",
+    "autoUpdate": false,
+    "updateInterval": 86400000,
+    "verifySkills": true,
+    "cacheSkills": true,
+    "cacheDuration": 3600000
+  },
+  "skillsHub": {
+    "enabled": true,
+    "localIndexPath": "skills-index.json",
+    "remoteIndexUrl": "https://raw.githubusercontent.com/8zhangshulun/open-claw-gsn-skill-sharing-plugin/main/skills-index.json",
+    "syncOnStartup": false,
+    "downloadSkills": true,
+    "downloadDirectory": "skills/hub",
+    "verifyDownloadedSkills": true
+  }
 }
