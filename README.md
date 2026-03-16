@@ -308,10 +308,14 @@ node global-skill-network.js --rollback
 
 ## 🔗 相关链接
 
-- OpenClaw 官网: [待添加]
-- 全球技能仓库: https://github.com/OpenClaw-Global/global-skills.git
-- 问题反馈: [待添加]
-- 社区论坛: [待添加]
+- **项目仓库**: https://github.com/8zhangshulun/open-claw-gsn-skill-sharing-plugin
+- **全球技能仓库**: https://github.com/OpenClaw-Global/global-skills.git
+- **贡献指南**: [CONTRIBUTING.md](CONTRIBUTING.md)
+- **更新日志**: [CHANGELOG.md](CHANGELOG.md)
+- **测试报告**: [TEST-REPORT.md](TEST-REPORT.md)
+- **许可证**: [LICENSE](LICENSE)
+- **问题反馈**: https://github.com/8zhangshulun/open-claw-gsn-skill-sharing-plugin/issues
+- **社区讨论**: https://github.com/8zhangshulun/open-claw-gsn-skill-sharing-plugin/discussions
 
 ## 📞 技术支持
 
@@ -324,6 +328,8 @@ node global-skill-network.js --rollback
 
 ## 🎯 版本历史
 
+详细的版本更新记录请查看 [CHANGELOG.md](CHANGELOG.md)
+
 ### v1.0.0 (2024-03-16)
 
 - ✅ 初始版本发布
@@ -332,6 +338,7 @@ node global-skill-network.js --rollback
 - ✅ 危险代码扫描
 - ✅ 版本回退功能
 - ✅ 完全合规设计
+- ✅ 100% 测试通过率
 
 ---
 
