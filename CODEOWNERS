@@ -1,0 +1,42 @@
+# Code Owners for OpenClaw Global Skill Sharing Plugin
+
+# 全局代码所有者
+# 这些用户对所有更改拥有审核权限
+
+* @8zhangshulun
+
+# 核心文件
+# 主程序文件需要主要维护者审核
+global-skill-network.js @8zhangshulun
+
+# 配置文件
+global-skill-config.json @8zhangshulun
+
+# 文档
+README.md @8zhangshulun
+CONTRIBUTING.md @8zhangshulun
+CODEOWNERS @8zhangshulun
+
+# 测试文件
+TEST-REPORT.md @8zhangshulun
+
+# 技能目录
+# 全球技能需要安全审核
+skills/global/ @8zhangshulun
+
+# 本地技能
+# 本地技能私有，不需要审核
+skills/local/ @8zhangshulun
+
+# 备份目录
+skills/backups/ @8zhangshulun
+
+# GitHub 配置
+.github/ @8zhangshulun
+
+# 注意事项：
+# 1. CODEOWNERS 文件使用 Git 语法
+# 2. 每行格式：文件路径 @用户名
+# 3. * 表示所有文件
+# 4. # 开头的是注释
+# 5. 更改此文件需要所有者批准

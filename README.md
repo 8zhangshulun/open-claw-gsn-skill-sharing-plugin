@@ -34,10 +34,21 @@ open-claw-gsn-skill-sharing-plugin/
 ├── global-skill-network.js      # 主程序文件
 ├── global-skill-config.json     # 配置文件
 ├── README.md                    # 说明文档
-├── skills/                      # 技能目录
-│   ├── global/                  # 全球技能 (只读)
-│   ├── local/                   # 本地技能 (私有)
-│   └── backups/                 # 版本备份
+├── CONTRIBUTING.md               # 贡献指南
+├── CODEOWNERS                   # 代码所有者
+├── LICENSE                      # MIT 许可证
+├── CHANGELOG.md                 # 更新日志
+├── TEST-REPORT.md               # 测试报告
+├── .github/                     # GitHub 配置
+│   ├── ISSUE_TEMPLATE/           # Issue 模板
+│   │   ├── bug_report.md
+│   │   ├── feature_request.md
+│   │   └── config.yml
+│   └── pull_request_template.md  # PR 模板
+└── skills/                      # 技能目录
+    ├── global/                  # 全球技能 (只读)
+    ├── local/                   # 本地技能 (私有)
+    └── backups/                 # 版本备份
 ```
 
 ## 🚀 快速开始

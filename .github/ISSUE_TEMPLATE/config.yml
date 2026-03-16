@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 贡献指南
+    url: https://github.com/8zhangshulun/open-claw-gsn-skill-sharing-plugin/blob/master/CONTRIBUTING.md
+    about: 请先阅读贡献指南
+  - name: GitHub Discussions
+    url: https://github.com/8zhangshulun/open-claw-gsn-skill-sharing-plugin/discussions
+    about: 在讨论区提问和交流
