@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "lastUpdate": null,
+  "securityLevel": "medium",
+  "updateStrategy": "notify",
+  "autoSync": false,
+  "syncInterval": 3600000,
+  "sandboxEnabled": true,
+  "dangerousPatterns": [
+    "eval\\(",
+    "exec\\(",
+    "require\\(.*child_process\\)",
+    "require\\(.*fs\\).*unlink",
+    "require\\(.*fs\\).*rmdir",
+    "\\$__dirname",
+    "\\$__filename",
+    "process\\.exit",
+    "process\\.kill",
+    "\\.(exec|spawn|fork)\\("
+  ],
+  "allowedDomains": [],
+  "maxFileSize": 1048576,
+  "enableLogging": true
+}
