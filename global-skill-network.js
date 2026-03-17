@@ -11,6 +11,7 @@ class GlobalSkillNetwork {
         this.config = this.loadConfig();
         this.skillsDir = path.join(process.cwd(), 'skills');
         this.globalRepo = 'https://github.com/OpenClaw-Global/global-skills.git';
+        this.giteeRepo = 'https://gitee.com/OpenClaw-Global/global-skills.git';
         this.globalSkillsDir = path.join(this.skillsDir, 'global');
         this.localSkillsDir = path.join(this.skillsDir, 'local');
         this.hubSkillsDir = path.join(this.skillsDir, 'hub');
@@ -682,19 +683,52 @@ class GlobalSkillNetwork {
         this.log('='.repeat(50));
         this.log('OpenClaw Skills Hub - Sync Mode');
         this.log('='.repeat(50));
-
         const downloaded = await this.downloadSkillsIndex();
         if (!downloaded) {
             this.log('Failed to sync skills hub', 'error');
             return false;
         }
-
         this.log(`Skills hub synced successfully`);
         this.log(`Total skills available: ${this.skillsIndex.skills.length}`);
         this.log(`Categories: ${Object.keys(this.skillsIndex.categories).length}`);
         this.log(`Last updated: ${this.skillsIndex.lastUpdated}`);
-
         return true;
+    }
+
+    async pushToGitee() {
+        this.log('='.repeat(50));
+        this.log('OpenClaw Skills Hub - Push to Gitee');
+        this.log('='.repeat(50));
+        this.log('正在推送到Gitee...');
+        this.log('='.repeat(50));
+        
+        try {
+            const giteeRepo = this.config.gitee?.repository;
+            if (!giteeRepo) {
+                this.log('Gitee repository not configured', 'error');
+                return false;
+            }
+            
+            const giteeBranch = this.config.gitee?.branch || 'master';
+            
+            await this.executeCommand('git', ['remote', 'add', 'gitee', giteeRepo], process.cwd());
+            await this.executeCommand('git', ['push', 'gitee', giteeBranch], process.cwd());
+            
+            this.log('='.repeat(50));
+            this.log('推送到Gitee成功！');
+            this.log('='.repeat(50));
+            this.log(`仓库地址: ${giteeRepo}`);
+            this.log(`分支: ${giteeBranch}`);
+            this.log('='.repeat(50));
+            this.log('您可以访问以下地址查看仓库：');
+            this.log(giteeRepo);
+            this.log('='.repeat(50));
+            
+            return true;
+        } catch (error) {
+            this.log(`推送到Gitee失败: ${error.message}`, 'error');
+            return false;
+        }
     }
 
     async run() {
@@ -722,6 +756,9 @@ class GlobalSkillNetwork {
                 break;
             case '--sync-hub':
                 await this.syncSkillsHub();
+                break;
+            case '--push-gitee':
+                await this.pushToGitee();
                 break;
             case '--search':
                 if (args[1]) {
@@ -766,6 +803,7 @@ class GlobalSkillNetwork {
                 this.log('  --safe      安全启动模式');
                 this.log('  --config    显示当前配置');
                 this.log('  --sync-hub  同步技能仓库索引');
+                this.log('  --push-gitee 推送到Gitee仓库');
                 this.log('  --search    搜索技能（需要提供查询词）');
                 this.log('  --list      列出所有可用技能');
                 this.log('  --call      调用指定技能（需要提供技能ID和参数）');
@@ -773,6 +811,9 @@ class GlobalSkillNetwork {
                 this.log('  node global-skill-network.js --search calculator');
                 this.log('  node global-skill-network.js --list');
                 this.log('  node global-skill-network.js --call calculator \'{"operation":"add","a":10,"b":20}\'');
+                this.log('\n平台支持:');
+                this.log('  GitHub: https://github.com/8zhangshulun/open-claw-gsn-skill-sharing-plugin');
+                this.log('  Gitee: https://gitee.com/tree-of-knowledge-zhang/open-claw-gsn-skill-sharing-plugin');
                 this.log('\nSecurity Features:');
                 this.log('  ✓ 默认只拉取，不上传');
                 this.log('  ✓ 本地技能永远私有');
@@ -781,7 +822,7 @@ class GlobalSkillNetwork {
                 this.log('  ✓ 不修改核心代码');
                 this.log('  ✓ 沙箱执行环境');
                 this.log('  ✓ 危险代码扫描');
-                this.log('  ✓ GitHub技能仓库支持');
+                this.log('  ✓ GitHub和Gitee技能仓库支持');
         }
     }
 }
