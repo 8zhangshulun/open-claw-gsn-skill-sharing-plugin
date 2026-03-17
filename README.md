@@ -214,7 +214,7 @@ node global-skill-network.js --config
 
 ## 🌍 全球技能仓库
 
-**仓库地址**: https://github.com/OpenClaw-Global/global-skills.git
+**仓库地址**: https://gitee.com/tree-of-knowledge-zhang/open-claw-gsn-skill-sharing-plugin
 
 **仓库特点**:
 - 只读访问，保护用户隐私
