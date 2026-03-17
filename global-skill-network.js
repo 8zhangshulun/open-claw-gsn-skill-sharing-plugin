@@ -10,7 +10,9 @@ class GlobalSkillNetwork {
     constructor() {
         this.config = this.loadConfig();
         this.skillsDir = path.join(process.cwd(), 'skills');
-        this.globalRepo = 'https://github.com/OpenClaw-Global/global-skills.git';
+        this.globalRepo = 'https://github.com/8zhangshulun/open-claw-gsn-skill-sharing-plugin';
+        this.globalSkillsDir = path.join(this.skillsDir, 'global');
+        this.giteeRepo = 'https://gitee.com/tree-of-knowledge-zhang/open-claw-gsn-skill-sharing-plugin';
         this.giteeRepo = 'https://gitee.com/OpenClaw-Global/global-skills.git';
         this.globalSkillsDir = path.join(this.skillsDir, 'global');
         this.localSkillsDir = path.join(this.skillsDir, 'local');

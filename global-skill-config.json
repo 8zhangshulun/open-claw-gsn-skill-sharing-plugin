@@ -33,6 +33,7 @@
     "cacheSkills": true,
     "cacheDuration": 3600000
   },
+  "globalRepo": "https://github.com/8zhangshulun/open-claw-gsn-skill-sharing-plugin",
   "gitee": {
     "enabled": true,
     "repository": "https://gitee.com/tree-of-knowledge-zhang/open-claw-gsn-skill-sharing-plugin",
