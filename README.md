@@ -309,8 +309,8 @@ node global-skill-network.js --rollback
 ## 🔗 相关链接
 
 - **项目仓库**: https://github.com/8zhangshulun/open-claw-gsn-skill-sharing-plugin
-- **全球技能仓库**: https://github.com/OpenClaw-Global/global-skills.git
-- **国内推荐仓库**: https://gitee.com/tree-of-knowledge-zhang/open-claw-gsn-skill-sharing-plugin
+- **全球技能仓库**: https://github.com/8zhangshulun/open-claw-gsn-skill-sharing-plugin
+- **中国技能仓库**: https://gitee.com/tree-of-knowledge-zhang/open-claw-gsn-skill-sharing-plugin
 - **贡献指南**: [CONTRIBUTING.md](CONTRIBUTING.md)
 - **更新日志**: [CHANGELOG.md](CHANGELOG.md)
 - **测试报告**: [TEST-REPORT.md](TEST-REPORT.md)
